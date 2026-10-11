@@ -10,35 +10,42 @@
 #               of a Large Language Model (LLM) AI assistant.
 # ==============================================================================
 
+# --- Global Variables ---
+
+SCRIPT_MODE=""
+declare -r USAGE_MODE="usage_mode"
+declare -r PROCESSING_MODE="processing_mode"
+
 # --- FUNCTIONS ---
 
 # ==========================================
 # PURPOSE:    Display script usage instructions and exit.
 # ARGUMENTS:  None
-# SIDE EFFECTS: Prints help text to stdout and exits the entire 
+# SIDE EFFECTS: Prints help text to terminal screen and exits the entire 
 #              script execution environment with an exit code of 0.
 # ==========================================
 usage() {
-    echo "Usage: $0 --path /path/to/directory [--profile secure-shared|strict-private|public-shared] [--dry-run]"
-    echo "       $0 -h | --help"
-    echo ""
-    echo "Options:"
-    echo "  -h, --help              : Display this help message"
-    echo "  --path <dir>            : Target directory to modify recursively"
-    echo "  --profile <name>        : Permission strategy profile to enforce"
-    echo "  -d, --dry-run           : Preview permission changes without applying them"
-    echo ""
-    echo "Profiles:"
-    echo "  secure-shared (Default) : Dirs 750, Files 640 | Best for internal teams"
-    echo "  strict-private          : Dirs 700, Files 600 | Only you can access"
-    echo "  public-shared           : Dirs 755, Files 644 | Standard for public web servers"
+    echo "Usage: $0 --path /path/to/directory [--profile secure-shared|strict-private|public-shared] [--dry-run]" | tee /dev/tty
+    echo "       $0 -h | --help" | tee /dev/tty
+    echo "" | tee /dev/tty
+    echo "Options:" | tee /dev/tty
+    echo "  -h, --help              : Display this help message and exit" | tee /dev/tty
+    echo "  --path <dir>            : Target directory to modify recursively" | tee /dev/tty
+    echo "  --profile <name>        : Permission strategy profile to enforce" | tee /dev/tty
+    echo "  -d, --dry-run           : Preview permission changes without applying them" | tee /dev/tty
+    echo "" | tee /dev/tty
+    echo "Profiles:" | tee /dev/tty
+    echo "  secure-shared (Default) : Dirs 750, Files 640 | Best for internal teams" | tee /dev/tty
+    echo "  strict-private          : Dirs 700, Files 600 | Only you can access" | tee /dev/tty
+    echo "  public-shared           : Dirs 755, Files 644 | Standard for public web servers" | tee /dev/tty
     exit 0
 }
 
 # ==========================================
 # PURPOSE:    Parse command-line arguments to extract target configurations.
 # ARGUMENTS:  $@ (All positional arguments passed down from main)
-# SIDE EFFECTS: - Prints error text to stderr and exits with status 1 on failure.
+# SIDE EFFECTS: - Triggers usage() and exits 0 if help is requested or no args provided.
+#               - Prints error text to stderr and exits with status 1 on failure.
 #               - Outputs a pipe-delimited string to stdout on success.
 # ==========================================
 parse_arguments() {
@@ -48,14 +55,21 @@ parse_arguments() {
     local dry_run="false"
 
     if [[ "$#" -eq 0 ]]; then
+        SCRIPT_MODE=${USAGE_MODE}
         usage
+
     fi
+
+    # Quick lookahead scan for help flags to prevent any accidental path execution
+    for arg in "$@"; do
+        if [[ "$arg" == "-h" || "$arg" == "--help" ]]; then
+            SCRIPT_MODE=${USAGE_MODE}
+            usage
+        fi
+    done
 
     while [[ "$#" -gt 0 ]]; do
         case "$1" in
-            -h|--help)
-                usage
-                ;;
             -d|--dry-run)
                 dry_run="true"
                 shift
@@ -197,10 +211,19 @@ main() {
     declare dry_run
 
     # Extract clean local fields using standard IFS parsing
+
     IFS='|' read -r target_dir profile dry_run <<< "$parsed_data"
 
-    validate_inputs "$target_dir" "$profile"
-    apply_permissions "$target_dir" "$profile" "$dry_run"
+    case "${SCRIPT_MODE}" in
+      ${PROCESSING_MODE})
+          validate_inputs "$target_dir" "$profile"
+          apply_permissions "$target_dir" "$profile" "$dry_run"
+          ;;
+
+      ${USAGE_MODE})
+          # In usage mode. Do nothing and exit.
+          ;;
+    esac
 }
 
 # --- EXECUTION ENTRY POINT ---
