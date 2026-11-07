@@ -19,7 +19,7 @@ parse_arguments() {
     # ARGUMENTS: Takes all positional arguments passed to the script ($@).
     # SIDE EFFECTS: Echoes the discovered filename string to stdout. Exits the 
     #               entire script with code 1 if parsing fails or option is missing.
-    
+
     local filename=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -54,7 +54,7 @@ validate_file_absence() {
     # ARGUMENTS: $1 - The target file path string to check.
     # SIDE EFFECTS: None if the file is absent. Terminates the entire script 
     #               with exit code 1 if the file already exists.
-    
+
     local target_path="$1"
 
     if [[ -e "$target_path" ]]; then
@@ -97,9 +97,9 @@ main() {
     # PURPOSE: Orchestrates script execution flow by chaining functions together.
     # ARGUMENTS: Takes all positional arguments passed from the command line ($@).
     # SIDE EFFECTS: Manages the local variable lifecycle and directs system data flow.
-    
+
     local target_file
-    
+
     # Capture the parsed filename locally from the function's stdout output
     target_file=$(parse_arguments "$@") || exit 1
 
