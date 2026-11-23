@@ -128,11 +128,6 @@ if [[ -z "${TARGET_DIR}" ]]; then
     exit 1
 fi
 
-# Append .olcf.ornl.gov automatically if a short hostname (e.g., "frontier") was passed
-if [[ "${HOST}" != *.* ]]; then
-    HOST="${HOST}.olcf.ornl.gov"
-fi
-
 # Verify sshfs is installed
 if ! command -v sshfs &> /dev/null; then
     echo "Error: 'sshfs' is not installed or not in your PATH." >&2
@@ -143,6 +138,7 @@ fi
 if [[ ! -d "${MOUNTPOINT}" ]]; then
     echo "Creating local mountpoint directory: ${MOUNTPOINT}"
     mkdir -p "${MOUNTPOINT}"
+    chmod 700 "${MOUNTPOINT}"
 fi
 
 # Execute SSHFS mount with OLCF-compatible options
@@ -152,7 +148,7 @@ echo "Please enter your PIN + RSA SecurID token when prompted."
 sshfs "${USER_ID}@${HOST}:${TARGET_DIR}" "${MOUNTPOINT}" \
     -o idmap=user \
     -o ServerAliveInterval=15 \
-    -o PreferredAuthentications=keyboard-interactive,password \
+    -o PreferredAuthentications=keyboard-interactive \
     -o ControlMaster=no
 
 echo "Successfully mounted to ${MOUNTPOINT}."
